@@ -12,6 +12,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var scrollNode:SKNode!
     var wallNode: SKNode!
     var bird:SKSpriteNode!
+    var itemNode:SKNode!
     
     // 衝突判定カテゴリー ↓追加
     let birdCategory: UInt32 = 1 << 0       // 0...00001
@@ -92,11 +93,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         wallNode = SKNode()
         scrollNode.addChild(wallNode)
         
+        itemNode = SKNode()
+        scrollNode.addChild(itemNode)
+        
         setupGround()
         setupColud()
         setupWall()
         setupBird()
         setupScoreLabel()   // 追加
+        setupItem()
     }
     
     func setupScoreLabel() {
@@ -131,6 +136,47 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         } else if bird.speed == 0 { // --- ここから ---
             restart()
         } // --- ここまで追加 ---
+    }
+    
+    func setupItem(){
+        //アイテムの画像を読み込む
+        let itemTexture = SKTexture(imageNamed: "plus")
+        itemTexture.filteringMode = .linear
+        
+        // 移動する距離を計算
+       let movingItemDistance = CGFloat(self.frame.size.width + itemTexture.size().width)
+
+       // 画面外まで移動するアクションを作成
+       let moveItem = SKAction.moveBy(x: -movingItemDistance, y: 0, duration:4)
+
+       // 自身を取り除くアクションを作成
+       let removeItem = SKAction.removeFromParent()
+        
+        // 鳥の画像サイズを取得
+       let birdSize = SKTexture(imageNamed: "bird_a").size()
+        
+        // 2つのアニメーションを順に実行するアクションを作成
+       let itemAnimation = SKAction.sequence([moveItem, removeItem])
+        
+        //アイテムを生成するアクションを作成
+        let createItemAnimation = SKAction.run({
+            //アイテム関連のノードを乗せるノードを作成
+            let item = SKNode()
+            let plus = SKSpriteNode(texture: itemTexture)
+            item.position = CGPoint(x: self.frame.size.width - 100, y: 500)
+            item.zPosition = -50 // 雲より手前、地面より奥
+            
+            plus.position = CGPoint(x: 0, y: birdSize.height * 2)
+            
+            item.addChild(plus)
+            item.run(itemAnimation)
+            self.itemNode.addChild(item)
+        })
+        
+        let waitItemAnimation = SKAction.wait(forDuration: 2)
+        let repeatAnimation = SKAction.repeatForever(SKAction.sequence([createItemAnimation, waitItemAnimation]))
+        
+        itemNode.run(repeatAnimation)
     }
     
     func setupBird() {
